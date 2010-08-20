@@ -1,16 +1,23 @@
 class ApplicationController < ActionController::Base
   include UrlHelper
   protect_from_forgery
-  before_filter :limit_subdomain_access
+  helper_method :current_subdomain, :check_my_subdomain
+  before_filter :current_subdomain
 
-  protected
 
-    def limit_subdomain_access
-        if request.subdomain.present?
-          # this error handling could be more sophisticated!
-          # please make a suggestion :-)
-          redirect_to root_url(:subdomain => false)
-        end
+  def current_subdomain
+      if request.subdomain.present?
+        current_subdomain = request.subdomain
+      else 
+        current_subdomain = nil
+      end
+      return current_subdomain
+  end
+  
+  def check_my_subdomain(subdomain)
+    if subdomain != current_subdomain
+      redirect_to "/opps" , :alert => "Sorry, resource is not part of your subdomain"
     end
+  end
 
 end

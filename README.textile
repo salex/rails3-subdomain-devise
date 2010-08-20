@@ -1,3 +1,79 @@
+h1. Fork of Rails3-Subdomain-Devise modified for basecamp-like subdomaims
+
+Use this project as a starting point for a Rails 3 application that uses subdomains and authentication. User management and authentication is implemented using "Devise":http://github.com/plataformatec/devise.
+
+This is a stab of modifying "Rails3-Subdomain-Devise":http://github.com/fortuity/rails3-subdomain-devise/ to provide basecamp-like subdomains.
+
+The major changes are:
+
+h3. Routing
+
+Routes and associations were modified:
+
+<pre>
+	devise_for :users
+	resources :users, :only => [:index, :show]   
+	resources :subdomains, :only => [:index, :show]
+
+	match '/' => 'sites#index', :constraints => { :subdomain => /.+/ }
+	match '/opps' => 'sites#opps', :constraints => { :subdomain => /.+/ }
+	root :to => "home#index"
+</pre>
+
+User and subdomains are no longer nested, but associated.
+
+<pre><code>
+	class Subdomain < ActiveRecord::Base
+	  has_many :users, :primary_key => "name", :foreign_key => "subdomain_name"
+	  has_friendly_id :name, :use_slug => true, :strip_non_ascii => true
+	  validates_uniqueness_of :name, :case_sensitive => false
+	  validates_presence_of :name
+	end
+	
+	class User < ActiveRecord::Base
+	  belongs_to :subdomain, :primary_key => "name", :foreign_key => "subdomain_name"
+	  devise :database_authenticatable, :registerable,
+	         :recoverable, :rememberable, :trackable, :validatable
+	  validates_presence_of :name, :subdomain_name
+	  validates_uniqueness_of  :email, :case_sensitive => false
+	  attr_accessible :name, :subdomain_name, :email, :password, :password_confirmation, :remember_me
+	  #has_friendly_id :subdomain_name, :use_slug => true, :strip_non_ascii => true
+	  after_create :create_subdomain
+
+	  private
+
+	  def create_subdomain
+	    subdomain = Subdomain.find_by_name(self.subdomain_name)
+	    if !subdomain
+	       Subdomain.create! :name => self.subdomain_name, :user_id => self.id
+	    end
+	  end
+	end
+	
+	
+</code></pre>
+
+The majority of the subdomains controller has been stubbed in that "sign_up" will create a subdomain if it does not exist. Code was not removed in that an Admin user might want to delete subdomains and associated users.
+
+The model names were not changed, but take on different roles.
+
+* Users#index probably should not be there, but it lists all users
+* Site would be the home for the site and currently list users for the subdomain
+* Subdomain still has user_id and indicates who created the subdomain (assume subdomain admin)
+* A helper method "current_subdomain" was added to controllers/application.rb
+* Another helper method "check_my_domain(subdomain)" will check a passed subdomain against the current domain. Subdomain is kind of the root table, all major tables should be belong to subdomain and this check is there to prevent url modification (edit member not belonging to your domain). It will redirect to an "opps" action in the site controller.
+* Sign-in has been removed is no subdomain exists.
+* If you register without a subdomain, it will be created if it does not exit. If it exists, you are added as a user of that subdomain (TODO this should be fixed to reject adding user from sign_up without subdomain if it exists)
+* If you register in a subdomain, you are added to the users of that subdomain.
+ 
+The rest of this readme is the original readme.
+
+I will consider changing it if my stab got close!
+
+P.S. I am not a novice at Rails, but don't consider myself experienced.
+
+
+
 h1. Rails3-Subdomain-Devise
 
 Use this project as a starting point for a Rails 3 application that uses subdomains and authentication. User management and authentication is implemented using "Devise":http://github.com/plataformatec/devise.

@@ -1,9 +1,10 @@
 Rails3SubdomainDevise::Application.routes.draw do
   devise_for :users
-  resources :users, :only => [:index, :show] do
-    resources :subdomains, :shallow => true
-  end
-  match '/' => 'sites#show', :constraints => { :subdomain => /.+/ }
+  resources :users, :only => [:index, :show]   
+  resources :subdomains, :only => [:index, :show]
+  
+  match '/' => 'sites#index', :constraints => { :subdomain => /.+/ }
+  match '/opps' => 'sites#opps', :constraints => { :subdomain => /.+/ }
   root :to => "home#index"
 
   # The priority is based upon order of creation:

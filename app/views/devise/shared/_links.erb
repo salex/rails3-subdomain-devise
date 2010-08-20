@@ -1,5 +1,7 @@
 <%- if controller_name != 'sessions' %>
+  <% if !current_subdomain.nil? %>
   <%= link_to "Sign in", new_session_path(resource_name) %><br />
+  <% end %>
 <% end -%>
 
 <%- if devise_mapping.registerable? && controller_name != 'registrations' %>

@@ -6,6 +6,9 @@ class DeviseCreateUsers < ActiveRecord::Migration
       t.rememberable
       t.trackable
       t.string :name
+      t.string :subdomain_name, :limit => 40
+      t.string :loginable_type, :limit => 40
+      t.integer :loginable_id
       # t.confirmable
       # t.lockable :lock_strategy => :failed_attempts, :unlock_strategy => :both
       # t.token_authenticatable

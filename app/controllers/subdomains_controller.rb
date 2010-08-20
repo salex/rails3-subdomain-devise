@@ -10,6 +10,7 @@ class SubdomainsController < ApplicationController
 
   def show
     @subdomain = Subdomain.find(params[:id])
+    @admin = User.find(@subdomain.user_id)
     respond_with(@subdomain)
   end
 

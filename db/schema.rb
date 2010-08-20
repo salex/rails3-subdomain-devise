@@ -44,6 +44,9 @@ ActiveRecord::Schema.define(:version => 20100808194652) do
     t.string   "current_sign_in_ip"
     t.string   "last_sign_in_ip"
     t.string   "name"
+    t.string   "subdomain_name",       :limit => 40
+    t.string   "loginable_type",       :limit => 40
+    t.integer  "loginable_id"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
