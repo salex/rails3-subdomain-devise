@@ -5,7 +5,7 @@ class User < ActiveRecord::Base
   validates_presence_of :name, :subdomain_name
   validates_uniqueness_of  :email, :case_sensitive => false
   attr_accessible :name, :subdomain_name, :email, :password, :password_confirmation, :remember_me
-  #has_friendly_id :subdomain_name, :use_slug => true, :strip_non_ascii => true
+  # has_friendly_id :subdomain_name, :use_slug => true, :strip_non_ascii => true
   after_create :create_subdomain
   
   private

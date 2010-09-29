@@ -6,7 +6,7 @@ class ApplicationController < ActionController::Base
 
 
   def current_subdomain
-      if request.subdomain.present?
+      if request.subdomain.present? && request.subdomain != "www"
         current_subdomain = request.subdomain
       else 
         current_subdomain = nil
