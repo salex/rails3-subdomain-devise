@@ -10,10 +10,12 @@ user1 = User.create! :name => 'Foo First User', :subdomain_name => "foo", :email
 puts 'New user created: ' << user1.name
 user2 = User.create! :name => 'Other User', :subdomain_name => "bar", :email => 'otheruser@test.com', :password => 'please', :password_confirmation => 'please'
 puts 'New user created: ' << user2.name
+# subdomains creation removed because they are created automaticaly by user signup left only the display
 puts 'SETTING UP EXAMPLE SUBDOMAINS'
-subdomain1 = Subdomain.create! :name => 'foo', :user_id => user1.id
-puts 'Created subdomain: ' << subdomain1.name
-subdomain2 = Subdomain.create! :name => 'bar', :user_id => user2.id
-puts 'Created subdomain: ' << subdomain2.name
+# subdomain1 = Subdomain.create! :name => 'foo', :user_id => user1.id
+puts 'Created subdomain: ' << user1.subdomain.name
+# subdomain2 = Subdomain.create! :name => 'bar', :user_id => user2.id
+puts 'Created subdomain: ' << user2.subdomain.name
+
 user3 = User.create! :name => 'Foo Second User', :subdomain_name => "foo", :email => 'user2@test.com', :password => 'please', :password_confirmation => 'please'
 user3 = User.create! :name => 'Foo Third User', :subdomain_name => "foo", :email => 'user3@test.com', :password => 'please', :password_confirmation => 'please'
