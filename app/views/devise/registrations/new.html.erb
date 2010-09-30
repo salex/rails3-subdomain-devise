@@ -3,11 +3,10 @@
 <%= form_for(resource, :as => resource_name, :url => registration_path(resource_name)) do |f| %>
   <%= devise_error_messages! %>
 
-  <p><%= f.label :subdomain %>
     <% if current_subdomain %>
-      : <%= f.hidden_field :subdomain_name, :value => current_subdomain %> <%= current_subdomain%></p>
-    
+    <%= f.hidden_field :subdomain_name, :value => current_subdomain.name %>
     <% else%>
+    <p><%= f.label :subdomain %>
       <br /><%= f.text_field :subdomain_name%></p>
     <% end %>
 
