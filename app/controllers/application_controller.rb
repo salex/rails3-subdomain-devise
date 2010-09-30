@@ -3,6 +3,7 @@ class ApplicationController < ActionController::Base
   protect_from_forgery
   helper_method :current_subdomain, :check_my_subdomain
   before_filter :current_subdomain
+  before_filter :set_mailer_url_options
 
 
   def current_subdomain
