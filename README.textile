@@ -4,6 +4,8 @@ Use this project as a starting point for a Rails 3 application that uses basecam
 
 This is a stab of modifying "Rails3-Subdomain-Devise":http://github.com/fortuity/rails3-subdomain-devise/ to provide basecamp-like subdomains.
 
+Thanks to "babinho's fork":http://github.com/babinho/rails3-subdomain-devise/ for cleaning up some things up and going back to a subdomain id instead of name as the primary key.
+
 The major changes are:
 
 h3. Routing
@@ -11,43 +13,44 @@ h3. Routing
 Routes and associations were modified:
 
 <pre>
-	devise_for :users
-	resources :users, :only => [:index, :show]   
-	resources :subdomains, :only => [:index, :show]
-
-	match '/' => 'sites#index', :constraints => { :subdomain => /.+/ }
-	match '/opps' => 'sites#opps', :constraints => { :subdomain => /.+/ }
-	root :to => "home#index"
+  devise_for :users
+  resources :users, :only => [:index, :show]   
+  resources :subdomains, :only => [:index, :show]
+  constraints(SubdomainRoute) do
+    match '/' => 'sites#index'
+    match '/opps' => 'sites#opps'
+  end
+  
+  root :to => "home#index"
 </pre>
 
 User and subdomains are no longer nested, but associated. 
 
 <pre><code>
 	class Subdomain < ActiveRecord::Base
-	  has_many :users, :primary_key => "name", :foreign_key => "subdomain_name"
+	  has_many :users
 	  has_friendly_id :name, :use_slug => true, :strip_non_ascii => true
 	  validates_uniqueness_of :name, :case_sensitive => false
 	  validates_presence_of :name
 	end
 	
 	class User < ActiveRecord::Base
-	  belongs_to :subdomain, :primary_key => "name", :foreign_key => "subdomain_name"
+	  belongs_to :subdomain
 	  devise :database_authenticatable, :registerable,
 	         :recoverable, :rememberable, :trackable, :validatable
 	  validates_presence_of :name, :subdomain_name
 	  validates_uniqueness_of  :email, :case_sensitive => false
 	  attr_accessible :name, :subdomain_name, :email, :password, :password_confirmation, :remember_me
 	  #has_friendly_id :subdomain_name, :use_slug => true, :strip_non_ascii => true
-	  after_create :create_subdomain
+	  before_create :create_subdomain
 
 	  private
 
 	  def create_subdomain
-	    subdomain = Subdomain.find_by_name(self.subdomain_name)
-	    if !subdomain
-	       Subdomain.create! :name => self.subdomain_name, :user_id => self.id
-	    end
+	    self.subdomain = Subdomain.find_by_name(self.subdomain_name) 
+	    self.subdomain ||= Subdomain.create!(:name => self.subdomain_name, :user_id => self.id)
 	  end
+	
 	end
 	
 	
@@ -63,12 +66,11 @@ The model names were not changed, but take on different roles. List of other cha
 * A helper method "current_subdomain" was added to controllers/application.rb to check if subdomain exists
 * Another helper method "check_my_domain(subdomain)" will check a passed subdomain against the current domain. Subdomain is kind of the root table, all major tables should be belong to subdomain and this check is there to prevent url modification (edit member not belonging to your domain). It will redirect to an "opps" action in the site controller.
 * Sign-in has been removed if no subdomain exists. If you modifiy the url and sign_in without a subdomain. It will log you in, but then immediately log you out and redirect to the subdomain sign_in form. I can't seem to get the flash notice to work in this area.
-* If you register without a subdomain, it will be created if it does not exit. If it exists, you are added as a user of that subdomain (TODO this should be fixed to reject adding user from sign_up without subdomain if it exists)
+** I've made a few attempts to sign-in at the root level and redirect to the subdomain and create a session there, but failed! If anyone has any ideas on how to do this with devise, you are more than welcome to give it a try.
+** Send sign-in parameters to subdomain with a CURL post ofter sign-out of root domain?
+* If you register without a subdomain, it will be created when the user is created. If it exists, you are added as a user of that subdomain (TODO this should be fixed to reject adding user from sign_up without subdomain, if it exists)
 * If you register in a subdomain, you are added as a the users of that subdomain.
  
-The rest of this readme is the original readme and of course does ot apply.
-
-I will consider changing it if my stab got close!
 
 P.S. I am not a novice at Rails, but don't consider myself experienced.
 
@@ -83,240 +85,8 @@ Installation (I think!)
 
 h1. Rails3-Subdomain-Devise
 
-Use this project as a starting point for a Rails 3 application that uses subdomains and authentication. User management and authentication is implemented using "Devise":http://github.com/plataformatec/devise.
+Please visit "Rails3-Subdomain-Devise":http://github.com/fortuity/rails3-subdomain-devise for the excellent step-by-step tutorial. You should still be able to follow the tutorial for this fork if you address the above changes.
 
-Is the app useful to you? Follow me on Twitter:
-"http://twitter.com/danielkehoe":http://twitter.com/danielkehoe
-and tweet some praise. I'd love to know you were helped out by what I've put together.
-
-Any issues? Please create an "Issue":http://github.com/fortuity/rails3-subdomain-devise/issues on GitHub.
-
-h2. "Building It" Tutorial
-
-A complete walkthrough tutorial is available on the GitHub wiki:
-
-"View the Tutorial":http://wiki.github.com/fortuity/rails3-subdomain-devise/tutorial-walkthrough
-
-The tutorial documents each step that you must follow to create this application. Every step is documented concisely, so a complete beginner can create this application without any additional knowledge. However, no explanation is offered for any of the steps, so if you are a beginner, you're advised to look for an introduction to Rails elsewhere. Refer to the "Rails Guides":http://guides.rails.info/ site for help if you are a beginner.
-
-For an introduction to Rails 3 and subdomains, see Ryan Bates's screencast "Subdomains in Rails 3":http://railscasts.com/episodes/221-subdomains-in-rails-3 (a transcription is available from "ASCIIcasts":http://asciicasts.com/episodes/221-subdomains-in-rails-3).
-
-If you simply wish to modify the application for your own project, you can download the application and set it up as described below, without following the tutorial.
-
-h2. Use Cases
-
-h3. What Is Implemented
-
-This example implements "blog-style subdomains in Rails." The example is similar to the application shown in Ryan Bates's screencast "Subdomains in Rails 3":http://railscasts.com/episodes/221-subdomains-in-rails-3 but adds authentication using "Devise":http://github.com/plataformatec/devise. In this example, there is a "main" domain where anyone can visit and create a user account. And registered users can create any number of subdomains which could host blogs or other types of sites.
-
-h3. What Is Not Implemented
-
-Another use of subdomains is often called "Basecamp-style subdomains in Rails." Visitors to the main site can create a user account which is then hosted at a subdomain that matches their user name. Each user has only one subdomain and when they log in, all their activity is confined to their subdomain. A user's home page and account info is accessed only through the subdomain that matches their user name. This approach is NOT implemented in this application (if you build an example of this, let me know and I will add a link here).
-
-No testing (RSpec or otherwise) is implemented. This app only serves to demonstrate Devise working with subdomains on Rails 3.
-
-h2. Assumptions
-
-This tutorial is based on Rails 3 and Devise 1.1.1.
-
-Before beginning this tutorial, you need to install 
-
-* The Ruby language (version 1.8.7 or 1.9.2)
-* Rails (version 3 release candidate or newer)
-* A working installation of SQLite (preferred), MySQL, or PostgreSQL
-
-I recommend installing rvm, the "Ruby Version Manager":http://rvm.beginrescueend.com/, to manage multiple versions of Rails if you have a mix of Rails 3 and Rails 2 applications.
-
-If you are using rvm, you can see a list of the Ruby versions currently installed:
-@$ rvm list@
-
-Check that appropriate versions of Ruby and Rails are installed in your development environment:
-@$ ruby -v@
-@$ rails -v@
-
-If you intend to deploy to "Heroku":http://heroku.com/, note that Heroku supports Ruby version 1.8.7 but not Ruby version 1.9.2 (as of 7 August 2010).
-
-h2. Generating the Application
-
-To get started with a new Rails application based on this example, you can generate a new Rails app:
-
-@$ rails new app_name -m http://github.com/fortuity/rails3-subdomain-devise/raw/master/template.rb@
-
-This creates a new Rails app (with the @app_name@ you provide) on your computer. It includes everything in the example app (as described in the "tutorial":http://wiki.github.com/fortuity/rails3-subdomain-devise/tutorial-walkthrough). Plus it offers you the option of setting up your view files using the Haml templating language.
-
-If you wish to "change the recipe" to generate the app with your own customized options, you can copy and edit the file *template.rb*.
-
-h2. Downloading the Example
-
-I recommend "Generating the Application" as described above. If that doesn't work, or you simply wish to examine the example code, you can download the app ("clone the repository") with the command
-
-@$ git clone git(at)github.com:fortuity/rails3-subdomain-devise.git@
-
-The source code is managed with Git (a version control system) and hosted at GitHub. You'll need Git on your machine (install it from "http://git-scm.com/":http://git-scm.com/).
-
-h2. Set Up Gems
-
-h3. About Required Gems
-
-The application uses the following gems:
-
-* rails (version 3.0.0.rc)
-* sqlite3-ruby
-* devise (version 1.1.1)
-* friendly_id
-
-If you wish to deploy to Heroku, you must include the heroku gem.
-
-h3. Install the Gems
-
-Install the required gems on your computer:
-
-@$ bundle install@
-
-If you need to troubleshoot, you can check which gems are installed on your computer with:
-
-@$ gem list --local@
-
-h2. Getting Started
-
-h3. Configure Email
-
-Configure email by modifying
-
-*config/initializers/devise.rb*
-
-and setting the return email address for emails sent from the application.
-
-You may need to set values for your mailhost in
-
-*config/environments/development.rb*
-*config/environments/production.rb*
-
-h3. Set Up Configuration for Devise
-
-This app uses Devise for user management and authentication. Devise is at "http://github.com/plataformatec/devise":http://github.com/plataformatec/devise.
-
-You can modify the configuration file for Devise if you want to use something other than the defaults:
-
-*config/initializers/devise.rb*
-
-h2. Set Up the Database
-
-h3. Create a Database and Run Migrations
-
-Create an empty database. You can do this by running a rake command:
-
-@$ rake db:create@
-
-Run the migrations:
-
-@$ rake db:migrate@
-
-You can take a look at the database schema that's been created for you:
-
-*db/schema.rb*
-
-h3. Seed the Database With Users and Subdomains
-
-You'll want to set up a default user so you can easily log in to test the app. You can modify the file *db/seeds.rb* for your own name, email and password:
-
-<pre>
-puts 'SETTING UP EXAMPLE USERS'
-user1 = User.create! :name => 'First User', :email => 'user@test.com', :password => 'please', :password_confirmation => 'please'
-puts 'New user created: ' << user1.name
-user2 = User.create! :name => 'Other User', :email => 'otheruser@test.com', :password => 'please', :password_confirmation => 'please'
-puts 'New user created: ' << user2.name
-puts 'SETTING UP EXAMPLE SUBDOMAINS'
-subdomain1 = Subdomain.create! :name => 'foo', :user_id => user1.id
-puts 'Created subdomain: ' << subdomain1.name
-subdomain2 = Subdomain.create! :name => 'bar', :user_id => user2.id
-puts 'Created subdomain: ' << subdomain2.name
-</pre>
-
-Run the rake task to seed the database:
-
-@$ rake db:seed@
-
-h2. Test the App
-
-You can check that your app runs properly by entering the command
-
-@$ rails server@ (or, abbreviated: @$ rails s@)
-
-If you launch the application, it will be running at "http://localhost:3000/":http://localhost:3000/. However, unless you've made some configuration changes to your computer, you won't be able to resolve an address that uses a subdomain, such as "http://foo.localhost:3000/":http://foo.localhost:3000/. There are several complex solutions to this problem. You could set up your own domain name server on your localhost and create an A entry to catch all subdomains. You could modify your */etc/hosts* file (but it won't accommodate dynamically created subdomains). You can create a "proxy auto-config (PAC)":http://en.wikipedia.org/wiki/Proxy_auto-config file and set it up as the proxy in your web browser preferences. There's a far simpler solution that does not require reconfiguring your computer or web browser preferences. The developer Levi Cook registered a domain, "lvh.me":http://lvh.me:3000/ (short for: local virtual host me), that resolves to the localhost IP address 127.0.0.1 and supports wildcards (accommodating dynamically created subdomains). See "Tim Pope's blog post":http://tbaggery.com/2010/03/04/smack-a-ho-st.html for a NSFW alternative.
-
-To test the application, visit "http://lvh.me:3000/":http://lvh.me:3000/. You can also try "http://foo.lvh.me:3000/":http://foo.lvh.me:3000/ or "http://bar.lvh.me:3000/":http://bar.lvh.me:3000/.
-
-To sign in as the default user, (unless you've changed it) use
-
-* email: user@test.com
-* password: please
-
-You should delete or change the pre-configured logins before you deploy your application.
-
-h2. Customizing
-
-This application provides no useful functionality apart from demonstrating Devise working with subdomains on Rails 3.
-
-You can use the Site model, controller, and views as a beginning point for customizing the app. For example, you could build a blog application that is displayed on the Site pages.
-
-"Devise":http://github.com/plataformatec/devise provides a variety of features for implementing authentication. See the Devise documentation for options.
-
-h2. Issues
-
-See the "Tutorial":http://wiki.github.com/fortuity/rails3-subdomain-devise/tutorial-walkthrough for a detailed description of an issue with the Rails 3 release candidate, cookies, and subdomains. Specifically, the Rails 3 release candidate does not behave as expected when @:domain => :all@ is set in *config/initializers/session_store.rb*. Using the parameter @:domain => :all@ allows us to avoid hardcoding the domain name in the app, making it possible to test the app on our localhost machine and deploy it without changes. As a workaround, use @:domain => ".lvh.me"@ for development and then change it when you deploy it elsewhere.
-
-This issue is resolved with the Rails 3 master on GitHub. See "commit fd78bb72704554737117":http://github.com/rails/rails/commit/fd78bb727045547371179428886c9b262d66091d by Bryce Thornton. You can install the Rails 3 master from GitHub by changing your Gemfile and running @bundle install@.
-
-<pre>
-gem 'rails', :git => 'git://github.com/rails/rails.git' 
-#gem 'rails', '3.0.0.rc'
-</pre>
-
-After you run @bundle install@ you can should see the latest commit number from the master Rails repo in the *Gemfile.lock* file.
-
-h2. Testing
-
-The application does not include tests (RSpec or otherwise). It relies on  "Devise":http://github.com/plataformatec/devise which include extensive tests. This application is intended to be a basis for your own customized application and (in most cases) you will be writing your own tests for your required behavior.
-
-h2. Documentation and Support
-
-See the "Tutorial":http://wiki.github.com/fortuity/rails3-subdomain-devise/tutorial-walkthrough for this app for details of how it was built. Please create an "Issue":http://github.com/fortuity/rails3-subdomain-devise/issues on GitHub if you identify any problems or have suggestions for improvements.
-
-You can find documentation for "Devise":http://github.com/plataformatec/devise at "http://github.com/plataformatec/devise":http://github.com/plataformatec/devise. There is an active "Devise mailing list":http://groups.google.com/group/plataformatec-devise and you can submit "Devise issues":http://github.com/plataformatec/devise/issues at GitHub.
-
-This application is provided without additional documentation or support.
-
-h2. Contributing
-
-If you make improvements to this application, please share with others.
-
-* Fork the project on GitHub.
-* Make your feature addition or bug fix.
-* Commit with Git.
-* Send the author a pull request.
-
-If you add functionality to this application, create an alternative implementation, or build an application that is similar, please contact me and I'll add a note to the README so that others can find your work.
-
-h2. Similar Applications
-
-For a simple Devise example (without subdomains) for Rails 2.3, see "plataformatec/devise_example":http://github.com/plataformatec/devise_example.
-
-For an example of Devise using subdomains for Rails 2.3, see "fortuity/subdomain-authentication":http://github.com/fortuity/subdomain-authentication/.
-
-For a Rails 3 app using Devise and Mongoid (without subdomains), see "fortuity/rails3-mongoid-devise":http://github.com/fortuity/rails3-mongoid-devise/.
-
-h2. Credits
-
-Daniel Kehoe ("http://danielkehoe.com/":http://danielkehoe.com/) implemented the application and wrote the tutorial.
-
-Is the app useful to you? Follow me on Twitter:
-"http://twitter.com/danielkehoe":http://twitter.com/danielkehoe
-and tweet some praise. I'd love to know you were helped out by what I've put together.
-
-h4. Contributors
-
-A big thank you to contributor Fred Schoeneman for improving the tutorial.
 
 h2. License
 
