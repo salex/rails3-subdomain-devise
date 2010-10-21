@@ -87,6 +87,9 @@ h1. Rails3-Subdomain-Devise
 
 Please visit "Rails3-Subdomain-Devise":http://github.com/fortuity/rails3-subdomain-devise for the excellent step-by-step tutorial. You should still be able to follow the tutorial for this fork if you address the above changes.
 
+h1. Forks
+
+Version (fork) that uses Mongodb with Mongoid by millisami at "http://github.com/millisami/rails3-subdomain-devise":http://github.com/millisami/rails3-subdomain-devise
 
 h2. License
 
