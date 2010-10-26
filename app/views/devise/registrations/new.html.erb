@@ -4,9 +4,9 @@
   <%= devise_error_messages! %>
 
     <% if current_subdomain %>
-    <%= f.hidden_field :subdomain_name, :value => current_subdomain.name %>
+      <%= f.hidden_field :subdomain_name, :value => current_subdomain.name %>
     <% else%>
-    <p><%= f.label :subdomain %>
+      <p><%= f.label :subdomain %>
       <br /><%= f.text_field :subdomain_name%></p>
     <% end %>
 

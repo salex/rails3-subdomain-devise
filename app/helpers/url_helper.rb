@@ -1,6 +1,5 @@
 module UrlHelper
   def with_subdomain(subdomain)
-    puts "Now is the time " + subdomain.inspect
     
     subdomain = (subdomain || "")
     subdomain += "." unless subdomain.empty?
