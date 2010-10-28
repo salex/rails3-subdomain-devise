@@ -1,5 +1,9 @@
 h1. Fork of Rails3-Subdomain-Devise modified for basecamp-like subdomaims
 
+h4. Note
+
+<i>_This was the initial version of implementing subdomains using a BaseCamp like approach. While it is functional, I really didn't get everything quite right. Quite right is really up to your application. I have posted another repository that cleans up a few thing and adds Devise Invitable to implement invitations and CanCan to do some basic authorization. Pick your poison! "rails3-Devise-BCSD-Can-Invite":http://github.com/salex/rails3-Devise-BCSD-Can-Invite._</i>
+	
 Use this project as a starting point for a Rails 3 application that uses basecamp-like subdomains and authentication. User management and authentication is implemented using "Devise":http://github.com/plataformatec/devise.
 
 This is a stab of modifying "Rails3-Subdomain-Devise":http://github.com/fortuity/rails3-subdomain-devise/ to provide basecamp-like subdomains.
